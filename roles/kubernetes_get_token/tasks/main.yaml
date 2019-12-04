@@ -1,0 +1,8 @@
+---
+    - name: Get token
+      shell:
+        cmd: |
+          kubeadm token create --print-join-command
+      args:
+        executable: /bin/bash
+      register: kubernetes_token

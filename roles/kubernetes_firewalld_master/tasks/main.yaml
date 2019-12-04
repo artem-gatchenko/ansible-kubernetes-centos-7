@@ -1,0 +1,52 @@
+---
+
+    - firewalld:
+        port: 6443/tcp
+        permanent: yes
+        state: enabled
+
+    - firewalld:
+        port: 2379-2380/tcp
+        permanent: yes
+        state: enabled
+
+    - firewalld:
+        port: 10250/tcp
+        permanent: yes
+        state: enabled
+
+    - firewalld:
+        port: 10251/tcp
+        permanent: yes
+        state: enabled
+
+    - firewalld:
+        port: 10252/tcp
+        permanent: yes
+        state: enabled
+
+    - firewalld:
+        port: 10255/tcp
+        permanent: yes
+        state: enabled
+
+    - firewalld:
+        port: 8472/udp
+        permanent: yes
+        state: enabled
+
+    - firewalld:
+        port: 30000-32767/tcp
+        permanent: yes
+        state: enabled
+
+    - firewalld:
+        masquerade: yes
+        permanent: yes
+        state: enabled
+
+    - name: Reload Firewalld service
+      service:
+        name: firewalld
+        state: reloaded
+        enabled: yes

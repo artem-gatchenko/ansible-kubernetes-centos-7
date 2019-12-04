@@ -1,0 +1,39 @@
+---
+
+    - firewalld:
+        port: 10250/tcp
+        permanent: yes
+        state: enabled
+
+    - firewalld:
+        port: 10255/tcp
+        permanent: yes
+        state: enabled
+
+    - firewalld:
+        port: 8472/udp
+        permanent: yes
+        state: enabled
+
+    - firewalld:
+        port: 30000-32767/tcp
+        permanent: yes
+        state: enabled
+
+    - firewalld:
+        masquerade: yes
+        permanent: yes
+        state: enabled
+
+    - name: modprobe br_netfilter
+      shell:
+        cmd: |
+          modprobe br_netfilter
+      args:
+        executable: /bin/bash
+
+    - name: Reload Firewalld service
+      service:
+        name: firewalld
+        state: reloaded
+        enabled: yes

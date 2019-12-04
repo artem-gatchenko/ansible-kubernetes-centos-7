@@ -1,0 +1,82 @@
+---
+    - name: Init Kubernetes cluster
+      shell:
+        cmd: |
+          kubeadm init --pod-network-cidr=10.244.0.0/16
+      args:
+        executable: /bin/bash
+      register: kubernetes_init
+      when: kubernetes_install is changed
+
+    - name: Configure kubectl - Create directory
+      file:
+        path: "/home/{{ kubernetes_user }}/.kube"
+        state: directory
+        mode: '0755'
+        owner: "{{ kubernetes_user }}"
+        group: "{{ kubernetes_user }}"
+      when: kubernetes_install is changed
+
+    - name: Configure kubectl - Copy config
+      copy:
+        src: /etc/kubernetes/admin.conf
+        dest: "/home/{{ kubernetes_user }}/.kube/config"
+        mode: '0644'
+        owner: "{{ kubernetes_user }}"
+        group: "{{ kubernetes_user }}"
+      when: kubernetes_install is changed
+
+    - name: Install EPEL-Release
+      yum:
+        name: epel-release
+        state: latest
+
+    - name: Install BASH-Completion
+      yum:
+        name: bash-completion
+        state: latest
+
+    - name: Add kubectl completion
+      shell:
+        cmd: |
+          echo 'source <(kubectl completion bash)' >> $HOME/.bashrc
+      become: yes
+      become_user: "{{ kubernetes_user }}"
+      args:
+        executable: /bin/bash
+      when: kubernetes_install is changed
+
+    - name: Install Flannel
+      shell:
+        cmd: |
+          kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+      become: yes
+      become_user: "{{ kubernetes_user }}"
+      args:
+        executable: /bin/bash
+      when: kubernetes_install is changed
+
+    - name: Download Helm
+      unarchive:
+        src: https://get.helm.sh/helm-v3.0.0-linux-amd64.tar.gz
+        dest: /tmp
+        creates: /usr/local/bin/helm
+        remote_src: yes
+      when: kubernetes_install is changed
+
+    - name: Copy Helm
+      copy:
+        src: /tmp/linux-amd64/helm
+        dest: /usr/bin/helm
+        mode: '0755'
+      when: kubernetes_install is changed
+
+    - name: Add Helm stable repo
+      shell:
+        cmd: |
+          helm repo add stable https://kubernetes-charts.storage.googleapis.com
+      become: yes
+      become_user: "{{ kubernetes_user }}"
+      args:
+        executable: /bin/bash
+      when: kubernetes_install is changed

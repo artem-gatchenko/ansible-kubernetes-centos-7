@@ -1,0 +1,79 @@
+---
+    - name: Check that the Kubernetes repo exists
+      stat:
+        path: /etc/yum.repos.d/kubernetes.repo
+      register: kubernetes_repo
+
+    - name: Add Kubernetes repo
+      shell:
+        cmd: |
+          cat <<EOF > /etc/yum.repos.d/kubernetes.repo
+          [kubernetes]
+          name=Kubernetes
+          baseurl=https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+          enabled=1
+          gpgcheck=1
+          repo_gpgcheck=1
+          gpgkey=https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+          EOF
+          setenforce 0
+          sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
+      args:
+        executable: /bin/bash
+      when: kubernetes_repo.stat.exists == False
+
+    - name: Install Kubernetes
+      yum:
+        name: kubeadm
+        state: latest
+        disable_excludes: kubernetes
+      register: kubernetes_install
+
+    - name: Setup daemon
+      shell:
+        cmd: |
+          cat <<EOF > /etc/docker/daemon.json
+          {
+            "exec-opts": ["native.cgroupdriver=systemd"],
+            "log-driver": "json-file",
+            "log-opts": {
+              "max-size": "100m"
+            },
+            "storage-driver": "overlay2"
+          }
+          EOF
+          cat <<EOF > /etc/sysctl.d/k8s.conf
+          net.bridge.bridge-nf-call-ip6tables = 1
+          net.bridge.bridge-nf-call-iptables = 1
+          EOF
+          sysctl --system
+      args:
+        executable: /bin/bash
+      when: kubernetes_install is changed
+
+    - name: Restart Docker service
+      service:
+        name: docker
+        state: restarted
+      when: kubernetes_install is changed
+
+    - name: Disable SWAP
+      shell:
+        cmd: |
+          swapoff -a
+      args:
+        executable: /bin/bash
+      when: kubernetes_install is changed
+
+    - name: Remove SWAP from fstab
+      mount:
+        name: swap
+        fstype: swap
+        state: absent
+      when: kubernetes_install is changed
+
+    - name: Enable Kubelet service
+      service:
+        name: kubelet
+        enabled: yes
+        state: started

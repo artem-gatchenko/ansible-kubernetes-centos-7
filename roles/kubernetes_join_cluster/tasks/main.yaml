@@ -1,0 +1,10 @@
+---
+    - name: Join to cluster
+      shell:
+        cmd: |
+          {{ hostvars['localhost']['kubernetes_token']['stdout'] }}
+      become: yes
+      become_user: root
+      args:
+        executable: /bin/bash
+      when: kubernetes_install is changed

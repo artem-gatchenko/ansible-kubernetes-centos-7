@@ -1,0 +1,14 @@
+---
+- hosts: node
+  roles:
+    - kubernetes_firewalld_node
+    - docker_install
+    - kubernetes_install
+
+- hosts: localhost
+  roles:
+    - kubernetes_get_token
+
+- hosts: node
+  roles:
+    - kubernetes_join_cluster

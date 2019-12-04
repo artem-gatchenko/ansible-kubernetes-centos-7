@@ -1,0 +1,7 @@
+---
+- hosts: localhost
+  roles:
+    - kubernetes_firewalld_master
+    - docker_install
+    - kubernetes_install
+    - kubernetes_create_cluster
